@@ -8,7 +8,12 @@
     <h3>Favorite Pizza:</h3>
 
     {% for topping in favorite_pizza %}
-        <li>{{topping}}</li>
+        {% if topping == 41 %}
+            {{topping + 100}}<br>
+        {% else %}
+            {{topping}}<br>
+        {% endif %}
+       
     {% endfor %}
 
     <p>This is my first flask app</p>
