@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, flash
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
@@ -17,6 +17,7 @@ def index():
     favorite_pizza = ["Peperoni", "Cheese", "Hawaiian"]
     first_name = "Kenny"
     stuff = "This is some bold text"
+    flash('Welcome to my website')
     return render_template('index.html', first_name=first_name, stuff=stuff, favorite_pizza=favorite_pizza)
 
 
@@ -51,6 +52,7 @@ def name():
     if form.validate_on_submit():
         name = form.name.data
         form.name.data = ''
+        flash('Form Submitted Successfully!')
     return render_template('name.html', form=form, name=name)
 
 
