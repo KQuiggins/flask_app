@@ -20,7 +20,7 @@
         <br><br>
         <p id="demo">This is stuff...</p>
 
-        <script src="url_for('static', filename='js/myfile.js')"></script>
+        <script src="{{url_for('static', filename='js/myfile.js')}}"></script>
     {% else %}
         <h1>What's your name?</h1>
         <br>

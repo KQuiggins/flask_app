@@ -2,14 +2,47 @@ from flask import Flask, render_template, flash
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
+# create a Flask Instance
 app = Flask(__name__)
+
+# set the secret key
 app.config['SECRET_KEY'] = 'mysecretkey'
 
+# Add Database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+
+# Initialize the database
+db = SQLAlchemy(app)
+
+# Create a class to represent the user
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(200), nullable=False, unique=True)
+    date_added = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Create a String
+    def __repr__(self):
+        return '<Name: {}>'.format(self.name)
 
 class NameForm(FlaskForm):
     name = StringField('What is your name?', validators=[DataRequired()])
     submit = SubmitField('Submit')
+
+
+class UserForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
+
+@app.route('/user/add', methods=['GET', 'POST'])
+def add_user():
+    return render_template('add_user.html')
+
 
 
 @app.route('/')
