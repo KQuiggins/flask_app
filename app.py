@@ -41,7 +41,20 @@ class UserForm(FlaskForm):
 
 @app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
-    return render_template('add_user.html')
+    name = None
+    form = UserForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user is None:
+            user = User(name=form.name.data, email=form.email.data)
+            db.session.add(user)
+            db.session.commit()
+        name = form.name.data
+        form.name.data = ''
+        form.email.data = ''
+        flash('User added successfully!')
+    our_users = User.query.order_by(User.date_added)    
+    return render_template('add_user.html', form=form, name=name, our_users=our_users)
 
 
 
