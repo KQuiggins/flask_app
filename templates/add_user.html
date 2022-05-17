@@ -21,7 +21,7 @@
         
         {% for our_user in our_users %}
         <tr>
-       <td>{{our_user.id}}. {{our_user.name}} - {{our_user.email}}</td>
+       <td>{{our_user.id}}. <a href="{{url_for('update_user', id=our_user.id)}}">{{our_user.name}}</a> - {{our_user.email}}</td>
         </tr>
         
         {% endfor %}
@@ -56,7 +56,7 @@
         
     {% for our_user in our_users %}
     <tr>
-   <td>{{our_user.id}}. {{our_user.name}} - {{our_user.email}}</td>
+   <td>{{our_user.id}}. <a href="{{url_for('update_user', id=our_user.id)}}">{{our_user.name}}</a> - {{our_user.email}}</td>
     </tr>
     
     {% endfor %}
