@@ -46,9 +46,34 @@ class UserForm(FlaskForm):
     favorite_color = StringField('Favorite Color')
     submit = SubmitField('Submit')
 
+# delete records from the database
+
+
+@app.route('/delete/<int:id>')
+def delete(id):
+    user_to_delete = User.query.get_or_404(id)
+    name = None
+    form = UserForm()
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash('The user was successfully deleted')
+
+        our_users = User.query.order_by(User.date_added)
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
+    except:
+        flash("There was a problem deleting the user. Try Again...")
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
+
 # update database
-
-
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update_user(id):
     form = UserForm()
@@ -65,7 +90,7 @@ def update_user(id):
             flash('There was an issue updating the user')
             return render_template('update.html', form=form, name_to_update=name_to_update)
     else:
-        return render_template('update.html', form=form, name_to_update=name_to_update)
+        return render_template('update.html', form=form, name_to_update=name_to_update, id=id)
 
 
 @app.route('/user/add', methods=['GET', 'POST'])
