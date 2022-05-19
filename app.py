@@ -2,6 +2,7 @@ from flask import Flask, render_template, flash, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, Length, EqualTo
+from wtforms.widgets import TextArea
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
@@ -20,9 +21,33 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# create a blog post model
+
+
+class Post(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255))
+    content = db.Column(db.Text)
+    author = db.Column(db.String(255))
+    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    slug = db.Column(db.String(255))
+
+    def __repr__(self):
+        return 'Blog post ' + str(self.id)
+
+# create a post form
+
+
+class PostForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    content = StringField('Content', validators=[DataRequired()], widget=TextArea())
+    author = StringField('Author', validators=[DataRequired()])
+    slug = StringField('Slug', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
+
+
 # Create a class to represent the user
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -32,11 +57,11 @@ class User(db.Model):
                            default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
 
-    @property
+    @ property
     def password(self):
         raise AttributeError('Password is not a readable attribute')
 
-    @password.setter
+    @ password.setter
     def password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -72,10 +97,33 @@ class UserForm(FlaskForm):
 
     submit = SubmitField('Submit')
 
+
+
+@ app.route('/add-post', methods=['GET', 'POST'])
+def add_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data,
+                    content=form.content.data,
+                    author=form.author.data,
+                    slug=form.slug.data)
+        # clear the form
+        form.title.data = ''
+        form.content.data = ''
+        form.author.data = ''
+        form.slug.data = ''
+        # add the post to the database
+        db.session.add(post)
+        db.session.commit()
+
+        flash('Your post has been created!', 'success')
+
+    return render_template('add_post.html', form=form)
+
+
+
 # delete records from the database
-
-
-@app.route('/delete/<int:id>')
+@ app.route('/delete/<int:id>')
 def delete(id):
     user_to_delete = User.query.get_or_404(id)
     name = None
@@ -100,7 +148,7 @@ def delete(id):
 
 
 # update database
-@app.route('/update/<int:id>', methods=['GET', 'POST'])
+@ app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update_user(id):
     form = UserForm()
     name_to_update = User.query.get_or_404(id)
@@ -119,7 +167,7 @@ def update_user(id):
         return render_template('update.html', form=form, name_to_update=name_to_update, id=id)
 
 
-@app.route('/user/add', methods=['GET', 'POST'])
+@ app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
     name = None
     form = UserForm()
@@ -144,14 +192,14 @@ def add_user():
     return render_template('add_user.html', form=form, name=name, our_users=our_users)
 
 
-@app.route('/')
+@ app.route('/')
 def index():
 
     flash('Welcome to my website')
     return render_template('index.html')
 
 
-@app.route('/user/<name>')
+@ app.route('/user/<name>')
 def user(name):
     return render_template('user.html', user_name=name)
 
@@ -160,21 +208,21 @@ def user(name):
     # Invalid URL
 
 
-@app.errorhandler(404)
+@ app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
 
 # Internal Server Error
 
 
-@app.errorhandler(500)
+@ app.errorhandler(500)
 def page_not_found(e):
     return render_template('500.html'), 500
 
 # create name page
 
 
-@app.route('/name', methods=['GET', 'POST'])
+@ app.route('/name', methods=['GET', 'POST'])
 def name():
     name = None
     form = NameForm()
@@ -188,7 +236,7 @@ def name():
 # create password test page
 
 
-@app.route('/test_pw', methods=['GET', 'POST'])
+@ app.route('/test_pw', methods=['GET', 'POST'])
 def test_pw():
 
     email = None
