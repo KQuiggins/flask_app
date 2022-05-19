@@ -1,10 +1,11 @@
 from flask import Flask, render_template, flash, request
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
+from wtforms.validators import DataRequired, Length, EqualTo
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # create a Flask Instance
 app = Flask(__name__)
@@ -29,6 +30,18 @@ class User(db.Model):
     favorite_color = db.Column(db.String(50))
     date_added = db.Column(db.DateTime, nullable=False,
                            default=datetime.utcnow)
+    password_hash = db.Column(db.String(120))
+
+    @property
+    def password(self):
+        raise AttributeError('Password is not a readable attribute')
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
     # Create a String
     def __repr__(self):
@@ -43,12 +56,43 @@ class NameForm(FlaskForm):
 class UserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
+
     favorite_color = StringField('Favorite Color')
+    password_hash = PasswordField('Password', validators=[DataRequired(), EqualTo(
+        'password_hash2', message='Passwords must match')])
+    password_hash2 = PasswordField(
+        'Confirm Password', validators=[DataRequired()])
+
     submit = SubmitField('Submit')
 
+# delete records from the database
+
+
+@app.route('/delete/<int:id>')
+def delete(id):
+    user_to_delete = User.query.get_or_404(id)
+    name = None
+    form = UserForm()
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash('The user was successfully deleted')
+
+        our_users = User.query.order_by(User.date_added)
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
+    except:
+        flash("There was a problem deleting the user. Try Again...")
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
+
 # update database
-
-
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update_user(id):
     form = UserForm()
@@ -65,7 +109,7 @@ def update_user(id):
             flash('There was an issue updating the user')
             return render_template('update.html', form=form, name_to_update=name_to_update)
     else:
-        return render_template('update.html', form=form, name_to_update=name_to_update)
+        return render_template('update.html', form=form, name_to_update=name_to_update, id=id)
 
 
 @app.route('/user/add', methods=['GET', 'POST'])
@@ -73,16 +117,21 @@ def add_user():
     name = None
     form = UserForm()
     if form.validate_on_submit():
+
         user = User.query.filter_by(email=form.email.data).first()
         if user is None:
+            # Hash the password
+            hashed_pw = generate_password_hash(
+                form.password_hash.data, "sha256")
             user = User(name=form.name.data, email=form.email.data,
-                        favorite_color=form.favorite_color.data)
+                        favorite_color=form.favorite_color.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
         form.email.data = ''
         form.favorite_color.data = ''
+        form.password_hash.data = ''
         flash('User added successfully!')
     our_users = User.query.order_by(User.date_added)
     return render_template('add_user.html', form=form, name=name, our_users=our_users)
