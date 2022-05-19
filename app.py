@@ -53,6 +53,13 @@ class NameForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
+class PasswordForm(FlaskForm):
+    email = StringField('What is your email?', validators=[DataRequired()])
+    password_hash = PasswordField(
+        'What is your password?', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
+
 class UserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
@@ -177,6 +184,33 @@ def name():
         form.name.data = ''
         flash('Form Submitted Successfully!')
     return render_template('name.html', form=form, name=name)
+
+# create password test page
+
+
+@app.route('/test_pw', methods=['GET', 'POST'])
+def test_pw():
+
+    email = None
+    password = None
+    pw_to_check = None
+    passed = None
+
+    form = PasswordForm()
+    # validate form
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password_hash.data
+        # clear form
+        form.email.data = ''
+        form.password_hash.data = ''
+        # Look up user by email
+        pw_to_check = User.query.filter_by(email=email).first()
+
+        # check hashed password
+        passed = check_password_hash(pw_to_check.password_hash, password)
+
+    return render_template('test_pw.html', form=form, email=email, password=password, pw_to_check=pw_to_check, passed=passed)
 
 
 if __name__ == '__main__':
