@@ -40,11 +40,11 @@ class Post(db.Model):
 
 class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
-    content = StringField('Content', validators=[DataRequired()], widget=TextArea())
+    content = StringField('Content', validators=[
+                          DataRequired()], widget=TextArea())
     author = StringField('Author', validators=[DataRequired()])
     slug = StringField('Slug', validators=[DataRequired()])
     submit = SubmitField('Submit')
-
 
 
 # Create a class to represent the user
@@ -98,6 +98,12 @@ class UserForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
+@app.route('/post')
+def post():
+    # Get the posts from the database
+    posts = Post.query.order_by(Post.date_posted)
+    return render_template('post.html', posts=posts)
+
 
 @ app.route('/add-post', methods=['GET', 'POST'])
 def add_post():
@@ -119,7 +125,6 @@ def add_post():
         flash('Your post has been created!', 'success')
 
     return render_template('add_post.html', form=form)
-
 
 
 # delete records from the database
