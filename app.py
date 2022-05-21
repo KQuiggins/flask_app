@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, request
+from flask import Flask, render_template, flash, request, redirect, url_for
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
 from wtforms.validators import DataRequired, Length, EqualTo
@@ -15,7 +15,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecretkey'
 
 # Add Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+
+# New MySQL database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
 
 # Initialize the database
 db = SQLAlchemy(app)
@@ -96,6 +99,33 @@ class UserForm(FlaskForm):
         'Confirm Password', validators=[DataRequired()])
 
     submit = SubmitField('Submit')
+
+
+@app.route('/posts/<int:id>')
+def posts(id):
+    post = Post.query.get_or_404(id)
+    return render_template('posts.html', post=post)
+
+
+@app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
+def edit_post(id):
+    post = Post.query.get_or_404(id)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.author = form.author.data
+        post.slug = form.slug.data
+        post.content = form.content.data
+        # update the database
+        db.session.add(post)
+        db.session.commit()
+        flash('Your post has been updated!', 'success')
+        return redirect(url_for('posts', id=post.id))
+    form.title.data = post.title
+    form.author.data = post.author
+    form.slug.data = post.slug
+    form.content.data = post.content
+    return render_template('edit_post.html', form=form)
 
 
 @app.route('/post')
