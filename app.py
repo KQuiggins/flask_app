@@ -101,6 +101,12 @@ class UserForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
+@app.route('/posts/<int:id>')
+def posts(id):
+    post = Post.query.get_or_404(id)
+    return render_template('posts.html', post=post)
+
+
 @app.route('/post')
 def post():
     # Get the posts from the database
