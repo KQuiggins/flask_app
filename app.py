@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 # create a Flask Instance
 app = Flask(__name__)
@@ -51,8 +52,9 @@ class PostForm(FlaskForm):
 
 
 # Create a class to represent the user
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False, unique=True)
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(200), nullable=False, unique=True)
     favorite_color = db.Column(db.String(50))
@@ -91,7 +93,7 @@ class PasswordForm(FlaskForm):
 class UserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
-
+    username = StringField('Username', validators=[DataRequired()])
     favorite_color = StringField('Favorite Color')
     password_hash = PasswordField('Password', validators=[DataRequired(), EqualTo(
         'password_hash2', message='Passwords must match')])
@@ -99,6 +101,80 @@ class UserForm(FlaskForm):
         'Confirm Password', validators=[DataRequired()])
 
     submit = SubmitField('Submit')
+
+
+# Flask Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+# create login form
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
+
+
+
+
+# create logout page
+@app.route('/logout', methods=['GET', 'POST'])
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out!')
+    return redirect(url_for('login'))
+
+
+
+# create login page
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user:
+            # check hash
+            if check_password_hash(user.password_hash, form.password.data):
+                login_user(user)
+                flash('Logged in successfully.')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Incorrect password')
+        else:
+            flash('No user found')
+    return render_template('login.html', form=form)
+
+# create dashboard page
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
+
+
+@app.route('/posts/delete/<int:id>')
+def delete_post(id):
+    post_to_delete = Post.query.get_or_404(id)
+
+    try:
+        db.session.delete(post_to_delete)
+        db.session.commit()
+        flash('Post deleted')
+        posts = Post.query.order_by(Post.date_posted)
+        return render_template('post.html', posts=posts)
+
+    except:
+
+        flash('Post was not deleted')
+        posts = Post.query.order_by(Post.date_posted)
+        return render_template('post.html', posts=posts)
 
 
 @app.route('/posts/<int:id>')
@@ -213,12 +289,13 @@ def add_user():
             # Hash the password
             hashed_pw = generate_password_hash(
                 form.password_hash.data, "sha256")
-            user = User(name=form.name.data, email=form.email.data,
+            user = User(username=form.username.data, name=form.name.data, email=form.email.data,
                         favorite_color=form.favorite_color.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
+        form.username.data = ''
         form.email.data = ''
         form.favorite_color.data = ''
         form.password_hash.data = ''
