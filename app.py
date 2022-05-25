@@ -1,13 +1,10 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
-from wtforms.validators import DataRequired, Length, EqualTo
-from wtforms.widgets import TextArea
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm
 
 # create a Flask Instance
 app = Flask(__name__)
@@ -39,16 +36,6 @@ class Post(db.Model):
     def __repr__(self):
         return 'Blog post ' + str(self.id)
 
-# create a post form
-
-
-class PostForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    content = StringField('Content', validators=[
-                          DataRequired()], widget=TextArea())
-    author = StringField('Author', validators=[DataRequired()])
-    slug = StringField('Slug', validators=[DataRequired()])
-    submit = SubmitField('Submit')
 
 
 # Create a class to represent the user
@@ -78,30 +65,6 @@ class User(db.Model, UserMixin):
         return '<Name: {}>'.format(self.name)
 
 
-class NameForm(FlaskForm):
-    name = StringField('What is your name?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
-
-
-class PasswordForm(FlaskForm):
-    email = StringField('What is your email?', validators=[DataRequired()])
-    password_hash = PasswordField(
-        'What is your password?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
-
-
-class UserForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired()])
-    username = StringField('Username', validators=[DataRequired()])
-    favorite_color = StringField('Favorite Color')
-    password_hash = PasswordField('Password', validators=[DataRequired(), EqualTo(
-        'password_hash2', message='Passwords must match')])
-    password_hash2 = PasswordField(
-        'Confirm Password', validators=[DataRequired()])
-
-    submit = SubmitField('Submit')
-
 
 # Flask Login
 login_manager = LoginManager()
@@ -114,11 +77,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-# create login form
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+
 
 
 # create logout page
