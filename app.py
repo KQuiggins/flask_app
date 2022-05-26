@@ -1,13 +1,10 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
-from wtforms.validators import DataRequired, Length, EqualTo
-from wtforms.widgets import TextArea
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm
 
 # create a Flask Instance
 app = Flask(__name__)
@@ -39,16 +36,6 @@ class Post(db.Model):
     def __repr__(self):
         return 'Blog post ' + str(self.id)
 
-# create a post form
-
-
-class PostForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    content = StringField('Content', validators=[
-                          DataRequired()], widget=TextArea())
-    author = StringField('Author', validators=[DataRequired()])
-    slug = StringField('Slug', validators=[DataRequired()])
-    submit = SubmitField('Submit')
 
 
 # Create a class to represent the user
@@ -78,30 +65,6 @@ class User(db.Model, UserMixin):
         return '<Name: {}>'.format(self.name)
 
 
-class NameForm(FlaskForm):
-    name = StringField('What is your name?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
-
-
-class PasswordForm(FlaskForm):
-    email = StringField('What is your email?', validators=[DataRequired()])
-    password_hash = PasswordField(
-        'What is your password?', validators=[DataRequired()])
-    submit = SubmitField('Submit')
-
-
-class UserForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired()])
-    username = StringField('Username', validators=[DataRequired()])
-    favorite_color = StringField('Favorite Color')
-    password_hash = PasswordField('Password', validators=[DataRequired(), EqualTo(
-        'password_hash2', message='Passwords must match')])
-    password_hash2 = PasswordField(
-        'Confirm Password', validators=[DataRequired()])
-
-    submit = SubmitField('Submit')
-
 
 # Flask Login
 login_manager = LoginManager()
@@ -114,11 +77,86 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-# create login form
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+
+
+@ app.route('/add-post', methods=['GET', 'POST'])
+@login_required
+def add_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data,
+                    content=form.content.data,
+                    author=form.author.data,
+                    slug=form.slug.data)
+        # clear the form
+        form.title.data = ''
+        form.content.data = ''
+        form.author.data = ''
+        form.slug.data = ''
+        # add the post to the database
+        db.session.add(post)
+        db.session.commit()
+
+        flash('Your post has been created!', 'success')
+
+    return render_template('add_post.html', form=form)
+
+
+
+
+
+
+# create dashboard page
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    form = UserForm()
+    id = current_user.id
+    name_to_update = User.query.get_or_404(id)
+    if request.method == 'POST':
+        name_to_update.name = request.form['name']
+        name_to_update.email = request.form['email']
+        name_to_update.favorite_color = request.form['favorite_color']
+        name_to_update.username = request.form['username']
+        try:
+            db.session.commit()
+            flash('User Updated Successfully')
+            return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+        except:
+            flash('There was an issue updating the user')
+            return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+    else:
+        return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+    
+    return render_template('dashboard.html')
+
+
+
+
+# delete records from the database
+@ app.route('/delete/<int:id>')
+def delete(id):
+    user_to_delete = User.query.get_or_404(id)
+    name = None
+    form = UserForm()
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash('The user was successfully deleted')
+
+        our_users = User.query.order_by(User.date_added)
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
+    except:
+        flash("There was a problem deleting the user. Try Again...")
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
 
 
 # create logout page
@@ -148,13 +186,8 @@ def login():
             flash('No user found')
     return render_template('login.html', form=form)
 
-# create dashboard page
 
 
-@app.route('/dashboard', methods=['GET', 'POST'])
-@login_required
-def dashboard():
-    return render_template('dashboard.html')
 
 
 @app.route('/posts/delete/<int:id>')
@@ -182,6 +215,7 @@ def posts(id):
 
 
 @app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_post(id):
     post = Post.query.get_or_404(id)
     form = PostForm()
@@ -209,55 +243,13 @@ def post():
     return render_template('post.html', posts=posts)
 
 
-@ app.route('/add-post', methods=['GET', 'POST'])
-def add_post():
-    form = PostForm()
-    if form.validate_on_submit():
-        post = Post(title=form.title.data,
-                    content=form.content.data,
-                    author=form.author.data,
-                    slug=form.slug.data)
-        # clear the form
-        form.title.data = ''
-        form.content.data = ''
-        form.author.data = ''
-        form.slug.data = ''
-        # add the post to the database
-        db.session.add(post)
-        db.session.commit()
-
-        flash('Your post has been created!', 'success')
-
-    return render_template('add_post.html', form=form)
 
 
-# delete records from the database
-@ app.route('/delete/<int:id>')
-def delete(id):
-    user_to_delete = User.query.get_or_404(id)
-    name = None
-    form = UserForm()
-    try:
-        db.session.delete(user_to_delete)
-        db.session.commit()
-        flash('The user was successfully deleted')
-
-        our_users = User.query.order_by(User.date_added)
-        return render_template('add_user.html',
-                               form=form,
-                               name=name,
-                               our_users=our_users)
-
-    except:
-        flash("There was a problem deleting the user. Try Again...")
-        return render_template('add_user.html',
-                               form=form,
-                               name=name,
-                               our_users=our_users)
 
 
 # update database
 @ app.route('/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_user(id):
     form = UserForm()
     name_to_update = User.query.get_or_404(id)
@@ -265,13 +257,14 @@ def update_user(id):
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
         name_to_update.favorite_color = request.form['favorite_color']
+        name_to_update.username = request.form['username']
         try:
             db.session.commit()
             flash('User Updated Successfully')
-            return render_template('update.html', form=form, name_to_update=name_to_update)
+            return render_template('update.html', form=form, name_to_update=name_to_update, id=id)
         except:
             flash('There was an issue updating the user')
-            return render_template('update.html', form=form, name_to_update=name_to_update)
+            return render_template('update.html', form=form, name_to_update=name_to_update, id=id)
     else:
         return render_template('update.html', form=form, name_to_update=name_to_update, id=id)
 

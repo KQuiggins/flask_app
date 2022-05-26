@@ -13,27 +13,11 @@
 
 {% endfor %}
 
-{% if name %}
-<h1>Update User</h1>
-<br><br><br>
-<table class="table table-hover table-bordered table-striped">
+{% if id == current_user.id %}
 
-
-    {% for our_user in our_users %}
-    <tr>
-        <td>{{our_user.id}}. <a href="{{url_for('update_user', id=our_user.id)}}">{{our_user.name}}</a> -
-            {{our_user.email}} - {{our_user.favorite_color}}</td>
-    </tr>
-
-    {% endfor %}
-</table>
+<h1>Update User....</h1>
 <br><br>
 
-
-
-{% else %}
-<h1>Update User....</h1>
-<br>
 <div class="shadow p-3 mb-5 bg-body rounded">
 
     <form action="/update/{{name_to_update.id}}" method='POST'>
@@ -42,6 +26,10 @@
         {{form.name.label(class="form-label")}}
 
         {{form.name(class="form-control", value=name_to_update.name)}}
+        <br>
+        {{form.username.label(class="form-label")}}
+
+        {{form.username(class="form-control", value=name_to_update.username)}}
         <br>
         {{form.email.label(class="form-label")}}
 
@@ -61,8 +49,24 @@
 
 <br><br><br>
 
+    
+    {% else %}
 
-{% endif %}
+    {% for message in get_flashed_messages() %}
+
+    <div class="alert alert-primary alert-dismissible fade show" role="alert">
+    Sorry, you can't update other users.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+
+
+    {% endfor %}
+    
+    {% endif %}
+
+
+
 
 
 
