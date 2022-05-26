@@ -79,6 +79,85 @@ def load_user(user_id):
 
 
 
+@ app.route('/add-post', methods=['GET', 'POST'])
+@login_required
+def add_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data,
+                    content=form.content.data,
+                    author=form.author.data,
+                    slug=form.slug.data)
+        # clear the form
+        form.title.data = ''
+        form.content.data = ''
+        form.author.data = ''
+        form.slug.data = ''
+        # add the post to the database
+        db.session.add(post)
+        db.session.commit()
+
+        flash('Your post has been created!', 'success')
+
+    return render_template('add_post.html', form=form)
+
+
+
+
+
+
+# create dashboard page
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    form = UserForm()
+    id = current_user.id
+    name_to_update = User.query.get_or_404(id)
+    if request.method == 'POST':
+        name_to_update.name = request.form['name']
+        name_to_update.email = request.form['email']
+        name_to_update.favorite_color = request.form['favorite_color']
+        name_to_update.username = request.form['username']
+        try:
+            db.session.commit()
+            flash('User Updated Successfully')
+            return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+        except:
+            flash('There was an issue updating the user')
+            return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+    else:
+        return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+    
+    return render_template('dashboard.html')
+
+
+
+
+# delete records from the database
+@ app.route('/delete/<int:id>')
+def delete(id):
+    user_to_delete = User.query.get_or_404(id)
+    name = None
+    form = UserForm()
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash('The user was successfully deleted')
+
+        our_users = User.query.order_by(User.date_added)
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
+    except:
+        flash("There was a problem deleting the user. Try Again...")
+        return render_template('add_user.html',
+                               form=form,
+                               name=name,
+                               our_users=our_users)
+
+
 
 # create logout page
 @app.route('/logout', methods=['GET', 'POST'])
@@ -107,31 +186,8 @@ def login():
             flash('No user found')
     return render_template('login.html', form=form)
 
-# create dashboard page
 
 
-@app.route('/dashboard', methods=['GET', 'POST'])
-@login_required
-def dashboard():
-    form = UserForm()
-    id = current_user.id
-    name_to_update = User.query.get_or_404(id)
-    if request.method == 'POST':
-        name_to_update.name = request.form['name']
-        name_to_update.email = request.form['email']
-        name_to_update.favorite_color = request.form['favorite_color']
-        name_to_update.username = request.form['username']
-        try:
-            db.session.commit()
-            flash('User Updated Successfully')
-            return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
-        except:
-            flash('There was an issue updating the user')
-            return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
-    else:
-        return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
-    
-    return render_template('dashboard.html')
 
 
 @app.route('/posts/delete/<int:id>')
@@ -187,56 +243,13 @@ def post():
     return render_template('post.html', posts=posts)
 
 
-@ app.route('/add-post', methods=['GET', 'POST'])
-@login_required
-def add_post():
-    form = PostForm()
-    if form.validate_on_submit():
-        post = Post(title=form.title.data,
-                    content=form.content.data,
-                    author=form.author.data,
-                    slug=form.slug.data)
-        # clear the form
-        form.title.data = ''
-        form.content.data = ''
-        form.author.data = ''
-        form.slug.data = ''
-        # add the post to the database
-        db.session.add(post)
-        db.session.commit()
-
-        flash('Your post has been created!', 'success')
-
-    return render_template('add_post.html', form=form)
 
 
-# delete records from the database
-@ app.route('/delete/<int:id>')
-def delete(id):
-    user_to_delete = User.query.get_or_404(id)
-    name = None
-    form = UserForm()
-    try:
-        db.session.delete(user_to_delete)
-        db.session.commit()
-        flash('The user was successfully deleted')
-
-        our_users = User.query.order_by(User.date_added)
-        return render_template('add_user.html',
-                               form=form,
-                               name=name,
-                               our_users=our_users)
-
-    except:
-        flash("There was a problem deleting the user. Try Again...")
-        return render_template('add_user.html',
-                               form=form,
-                               name=name,
-                               our_users=our_users)
 
 
 # update database
 @ app.route('/update/<int:id>', methods=['GET', 'POST'])
+@login_required
 def update_user(id):
     form = UserForm()
     name_to_update = User.query.get_or_404(id)
