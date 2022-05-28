@@ -226,11 +226,18 @@ def edit_post(id):
         db.session.commit()
         flash('Your post has been updated!', 'success')
         return redirect(url_for('posts', id=post.id))
-    form.title.data = post.title
-    #form.author.data = post.author
-    form.slug.data = post.slug
-    form.content.data = post.content
-    return render_template('edit_post.html', form=form)
+    
+    if current_user.id == post.poster.id:
+        form.title.data = post.title
+        #form.author.data = post.author
+        form.slug.data = post.slug
+        form.content.data = post.content
+        return render_template('edit_post.html', form=form)
+
+    else:
+        flash('You are not the author of this post')
+        posts = Post.query.order_by(Post.date_posted)
+        return render_template('post.html', posts=posts)
 
 
 @app.route('/post')
