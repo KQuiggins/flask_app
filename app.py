@@ -29,13 +29,13 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
     content = db.Column(db.Text)
-    author = db.Column(db.String(255))
+    # author = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
     slug = db.Column(db.String(255))
+    post_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     def __repr__(self):
         return 'Blog post ' + str(self.id)
-
 
 
 # Create a class to represent the user
@@ -48,6 +48,7 @@ class User(db.Model, UserMixin):
     date_added = db.Column(db.DateTime, nullable=False,
                            default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
+    posts = db.relationship('Post', backref='poster', lazy=True)
 
     @ property
     def password(self):
@@ -65,7 +66,6 @@ class User(db.Model, UserMixin):
         return '<Name: {}>'.format(self.name)
 
 
-
 # Flask Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -77,21 +77,20 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-
-
 @ app.route('/add-post', methods=['GET', 'POST'])
 @login_required
 def add_post():
     form = PostForm()
     if form.validate_on_submit():
+        poster = current_user.id
         post = Post(title=form.title.data,
                     content=form.content.data,
-                    author=form.author.data,
+                    post_id=poster,
                     slug=form.slug.data)
         # clear the form
         form.title.data = ''
         form.content.data = ''
-        form.author.data = ''
+        #form.author.data = ''
         form.slug.data = ''
         # add the post to the database
         db.session.add(post)
@@ -100,10 +99,6 @@ def add_post():
         flash('Your post has been created!', 'success')
 
     return render_template('add_post.html', form=form)
-
-
-
-
 
 
 # create dashboard page
@@ -127,10 +122,8 @@ def dashboard():
             return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
     else:
         return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
-    
+
     return render_template('dashboard.html')
-
-
 
 
 # delete records from the database
@@ -156,7 +149,6 @@ def delete(id):
                                form=form,
                                name=name,
                                our_users=our_users)
-
 
 
 # create logout page
@@ -187,23 +179,28 @@ def login():
     return render_template('login.html', form=form)
 
 
-
-
-
 @app.route('/posts/delete/<int:id>')
+@login_required
 def delete_post(id):
     post_to_delete = Post.query.get_or_404(id)
+    id = current_user.id
+    if id == post_to_delete.poster.id:
 
-    try:
-        db.session.delete(post_to_delete)
-        db.session.commit()
-        flash('Post deleted')
-        posts = Post.query.order_by(Post.date_posted)
-        return render_template('post.html', posts=posts)
+        try:
+            db.session.delete(post_to_delete)
+            db.session.commit()
+            flash('Post deleted')
+            posts = Post.query.order_by(Post.date_posted)
+            return render_template('post.html', posts=posts)
 
-    except:
+        except:
 
-        flash('Post was not deleted')
+            flash('Post was not deleted')
+            posts = Post.query.order_by(Post.date_posted)
+            return render_template('post.html', posts=posts)
+
+    else:
+        flash('Post was not deleted, you are not the author')
         posts = Post.query.order_by(Post.date_posted)
         return render_template('post.html', posts=posts)
 
@@ -221,7 +218,7 @@ def edit_post(id):
     form = PostForm()
     if form.validate_on_submit():
         post.title = form.title.data
-        post.author = form.author.data
+        #post.author = form.author.data
         post.slug = form.slug.data
         post.content = form.content.data
         # update the database
@@ -229,11 +226,18 @@ def edit_post(id):
         db.session.commit()
         flash('Your post has been updated!', 'success')
         return redirect(url_for('posts', id=post.id))
-    form.title.data = post.title
-    form.author.data = post.author
-    form.slug.data = post.slug
-    form.content.data = post.content
-    return render_template('edit_post.html', form=form)
+    
+    if current_user.id == post.poster.id:
+        form.title.data = post.title
+        #form.author.data = post.author
+        form.slug.data = post.slug
+        form.content.data = post.content
+        return render_template('edit_post.html', form=form)
+
+    else:
+        flash('You are not the author of this post')
+        posts = Post.query.order_by(Post.date_posted)
+        return render_template('post.html', posts=posts)
 
 
 @app.route('/post')
@@ -241,10 +245,6 @@ def post():
     # Get the posts from the database
     posts = Post.query.order_by(Post.date_posted)
     return render_template('post.html', posts=posts)
-
-
-
-
 
 
 # update database
