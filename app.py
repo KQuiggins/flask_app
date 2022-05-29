@@ -4,7 +4,8 @@ from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm
+from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm, SearchForm
+
 
 # create a Flask Instance
 app = Flask(__name__)
@@ -22,9 +23,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localh
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+
 # create a blog post model
-
-
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
@@ -226,7 +226,7 @@ def edit_post(id):
         db.session.commit()
         flash('Your post has been updated!', 'success')
         return redirect(url_for('posts', id=post.id))
-    
+
     if current_user.id == post.poster.id:
         form.title.data = post.title
         #form.author.data = post.author
@@ -245,6 +245,27 @@ def post():
     # Get the posts from the database
     posts = Post.query.order_by(Post.date_posted)
     return render_template('post.html', posts=posts)
+
+
+# pass to navbar
+@app.context_processor
+def base():
+    form = SearchForm()
+    return dict(form=form)
+
+
+# create search function
+@app.route('/search', methods=['POST'])
+def search():
+    form = SearchForm()
+    posts = Post.query
+    if form.validate_on_submit():
+        # Get data from form
+        post.searched = form.searched.data
+        # query the database
+        posts = posts.filter(Post.content.like('%' + post.searched + '%'))
+        posts = posts.order_by(Post.title).all()
+        return render_template('search.html', form=form, searched=post.searched, posts=posts)
 
 
 # update database
@@ -306,25 +327,21 @@ def index():
 def user(name):
     return render_template('user.html', user_name=name)
 
-    # create custom error pages
 
-    # Invalid URL
-
-
+# create custom error pages
+# Invalid URL
 @ app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
 
+
 # Internal Server Error
-
-
 @ app.errorhandler(500)
 def page_not_found(e):
     return render_template('500.html'), 500
 
+
 # create name page
-
-
 @ app.route('/name', methods=['GET', 'POST'])
 def name():
     name = None
@@ -336,9 +353,8 @@ def name():
         flash('Form Submitted Successfully!')
     return render_template('name.html', form=form, name=name)
 
+
 # create password test page
-
-
 @ app.route('/test_pw', methods=['GET', 'POST'])
 def test_pw():
 
