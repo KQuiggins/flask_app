@@ -20,7 +20,7 @@
     {{post.poster.name}}<br>
     {{post.slug}}<br>
     {{post.date_posted}}<br>
-    {{post.content}}<br><br>
+    {{post.content | safe }}<br><br>
     <br>
     <a href="{{url_for('posts', id=post.id)}}" class="btn btn-outline-primary btn-sm">View Post</a>
     <br><br>

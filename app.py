@@ -2,6 +2,7 @@ from flask import Flask, render_template, flash, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
+from flask_ckeditor import CKEditor
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm, SearchForm
@@ -9,7 +10,7 @@ from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm, Sea
 
 # create a Flask Instance
 app = Flask(__name__)
-
+ckeditor = CKEditor(app)
 # set the secret key
 app.config['SECRET_KEY'] = 'mysecretkey'
 
