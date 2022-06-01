@@ -78,6 +78,17 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+@ app.route('/admin')
+@ login_required
+def admin():
+    id = current_user.id
+    if id == 1:
+        return render_template('admin.html')
+    else:
+        flash('Sorry, must be admin to view this page!!!')
+        return redirect(url_for('dashboard'))
+
+
 @ app.route('/add-post', methods=['GET', 'POST'])
 @login_required
 def add_post():
