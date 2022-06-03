@@ -21,9 +21,13 @@
                 {{current_user.name}}
             </div>
             <div class="card-body">
-              <h5 class="card-title">Welcome to the User Dashboard</h5>
-              <p class="card-text">Here is all your user information.</p>
-              <p>
+              
+
+                <div class="container">
+                  <div class="row">
+                    <div class="col-8">
+
+                   
                 <strong>Name:</strong>&nbsp;{{current_user.name}}<br>
                 <strong>Username:</strong>&nbsp;{{current_user.username}}<br>
                 <strong>User Id:</strong>&nbsp;{{current_user.id}}<br>
@@ -37,11 +41,20 @@
 
               <a href="{{url_for('delete', id=current_user.id)}}" class="btn btn-danger btn-sm">Delete</a>
             </div>
+              
+              <div class="col-4">
+                <img src="{{ url_for('static', filename='images/profile_pic.jpg') }}" alt="profile_pic" width="150" align="right">
+              </div>
+            
+            </div>
+          </div>
+          </div>
           </div>
 
           <br>
 
           <div class="card">
+            
             <div class="card-header">
               Update Profile
             </div>
@@ -73,7 +86,7 @@
               
           </form>
         </div>
-          </div>
+        </div>
 
         
         
