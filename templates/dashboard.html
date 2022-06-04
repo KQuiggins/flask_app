@@ -33,6 +33,8 @@
                 <strong>User Id:</strong>&nbsp;{{current_user.id}}<br>
                 <strong>Email:</strong>&nbsp;{{current_user.email}}<br>
                 <strong>Favorite Color:</strong>&nbsp;{{current_user.favorite_color}}<br>
+                <strong>About Author:</strong>&nbsp;{{current_user.about_author}}<br>
+
                 <strong>Date Joined:</strong>&nbsp;{{current_user.date_added}}<br>
               </p>
               <a href="{{url_for('logout')}}" class="btn btn-primary btn-sm">Logout</a>
@@ -78,6 +80,12 @@
               {{form.favorite_color.label(class="form-label")}}
       
               {{form.favorite_color(class="form-control", value=name_to_update.favorite_color)}}
+              <br>
+              {{form.about_author.label(class="form-label")}}
+      
+              
+
+              <textarea name="about_author" class="form-control" id="about_author" cols="30" rows="10">{{name_to_update.about_author}}</textarea>
               <br>
               {{form.submit(class="btn btn-primary btn-sm")}}
       

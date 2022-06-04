@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
 from flask_ckeditor import CKEditor
+from sqlalchemy import true
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm, SearchForm
@@ -46,6 +47,7 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(200), nullable=False, unique=True)
     favorite_color = db.Column(db.String(50))
+    about_author = db.Column(db.Text(500), nullable=True)
     date_added = db.Column(db.DateTime, nullable=False,
                            default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
@@ -125,6 +127,7 @@ def dashboard():
         name_to_update.email = request.form['email']
         name_to_update.favorite_color = request.form['favorite_color']
         name_to_update.username = request.form['username']
+        name_to_update.about_author = request.form['about_author']
         try:
             db.session.commit()
             flash('User Updated Successfully')
