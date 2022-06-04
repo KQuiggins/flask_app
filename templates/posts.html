@@ -21,6 +21,9 @@
     {{post.slug}}<br>
     {{post.date_posted}}<br>
     {{post.content | safe }}<br><br>
+    {% if post.poster.about_author %}
+    {{post.poster.about_author}}
+    {% endif %}
     
 </div>
 <a href="{{url_for('post')}}" class="btn btn-outline-primary btn-sm">Back to Blog Post</a><br>
