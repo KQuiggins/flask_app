@@ -7,6 +7,9 @@ from sqlalchemy import true
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm, SearchForm
+from werkzeug.utils import secure_filename
+import uuid as uuid
+import os
 
 
 # create a Flask Instance
@@ -15,8 +18,12 @@ ckeditor = CKEditor(app)
 # set the secret key
 app.config['SECRET_KEY'] = 'mysecretkey'
 
+# Upload folder
+UPLOAD_FOLDER = './static/images/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 # Add Database
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 
 # New MySQL database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
@@ -51,6 +58,7 @@ class User(db.Model, UserMixin):
     date_added = db.Column(db.DateTime, nullable=False,
                            default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
+    profile_pic = db.Column(db.String(200), nullable=True)
     posts = db.relationship('Post', backref='poster', lazy=True)
 
     @ property
@@ -104,7 +112,7 @@ def add_post():
         # clear the form
         form.title.data = ''
         form.content.data = ''
-        #form.author.data = ''
+        # form.author.data = ''
         form.slug.data = ''
         # add the post to the database
         db.session.add(post)
@@ -128,8 +136,24 @@ def dashboard():
         name_to_update.favorite_color = request.form['favorite_color']
         name_to_update.username = request.form['username']
         name_to_update.about_author = request.form['about_author']
+        name_to_update.profile_pic = request.files['profile_pic']
+        
+
+        # grab image name
+        pic_filename = secure_filename(name_to_update.profile_pic.filename)
+
+        # create a unique name for the image
+        pic_filename = str(uuid.uuid4()) + '_' + pic_filename
+
+        # save the image
+        saver = request.files['profile_pic']
+        
+
+        # save pic_filename to the database
+        name_to_update.profile_pic=pic_filename
         try:
             db.session.commit()
+            saver.name_to_update.profile_pic.save(os.path.join(app.config['UPLOAD_FOLDER']), pic_filename)
             flash('User Updated Successfully')
             return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
         except:
@@ -144,15 +168,15 @@ def dashboard():
 # delete records from the database
 @ app.route('/delete/<int:id>')
 def delete(id):
-    user_to_delete = User.query.get_or_404(id)
-    name = None
-    form = UserForm()
+    user_to_delete=User.query.get_or_404(id)
+    name=None
+    form=UserForm()
     try:
         db.session.delete(user_to_delete)
         db.session.commit()
         flash('The user was successfully deleted')
 
-        our_users = User.query.order_by(User.date_added)
+        our_users=User.query.order_by(User.date_added)
         return render_template('add_user.html',
                                form=form,
                                name=name,
@@ -167,8 +191,8 @@ def delete(id):
 
 
 # create logout page
-@app.route('/logout', methods=['GET', 'POST'])
-@login_required
+@ app.route('/logout', methods=['GET', 'POST'])
+@ login_required
 def logout():
     logout_user()
     flash('You have been logged out!')
@@ -176,11 +200,11 @@ def logout():
 
 
 # create login page
-@app.route('/login', methods=['GET', 'POST'])
+@ app.route('/login', methods=['GET', 'POST'])
 def login():
-    form = LoginForm()
+    form=LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        user=User.query.filter_by(username=form.username.data).first()
         if user:
             # check hash
             if check_password_hash(user.password_hash, form.password.data):
@@ -194,48 +218,48 @@ def login():
     return render_template('login.html', form=form)
 
 
-@app.route('/posts/delete/<int:id>')
-@login_required
+@ app.route('/posts/delete/<int:id>')
+@ login_required
 def delete_post(id):
-    post_to_delete = Post.query.get_or_404(id)
-    id = current_user.id
+    post_to_delete=Post.query.get_or_404(id)
+    id=current_user.id
     if id == post_to_delete.poster.id:
 
         try:
             db.session.delete(post_to_delete)
             db.session.commit()
             flash('Post deleted')
-            posts = Post.query.order_by(Post.date_posted)
+            posts=Post.query.order_by(Post.date_posted)
             return render_template('post.html', posts=posts)
 
         except:
 
             flash('Post was not deleted')
-            posts = Post.query.order_by(Post.date_posted)
+            posts=Post.query.order_by(Post.date_posted)
             return render_template('post.html', posts=posts)
 
     else:
         flash('Post was not deleted, you are not the author')
-        posts = Post.query.order_by(Post.date_posted)
+        posts=Post.query.order_by(Post.date_posted)
         return render_template('post.html', posts=posts)
 
 
-@app.route('/posts/<int:id>')
+@ app.route('/posts/<int:id>')
 def posts(id):
-    post = Post.query.get_or_404(id)
+    post=Post.query.get_or_404(id)
     return render_template('posts.html', post=post)
 
 
-@app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
+@ app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
+@ login_required
 def edit_post(id):
-    post = Post.query.get_or_404(id)
-    form = PostForm()
+    post=Post.query.get_or_404(id)
+    form=PostForm()
     if form.validate_on_submit():
-        post.title = form.title.data
-        #post.author = form.author.data
-        post.slug = form.slug.data
-        post.content = form.content.data
+        post.title=form.title.data
+        # post.author = form.author.data
+        post.slug=form.slug.data
+        post.content=form.content.data
         # update the database
         db.session.add(post)
         db.session.commit()
@@ -243,57 +267,57 @@ def edit_post(id):
         return redirect(url_for('posts', id=post.id))
 
     if current_user.id == post.poster.id:
-        form.title.data = post.title
-        #form.author.data = post.author
-        form.slug.data = post.slug
-        form.content.data = post.content
+        form.title.data=post.title
+        # form.author.data = post.author
+        form.slug.data=post.slug
+        form.content.data=post.content
         return render_template('edit_post.html', form=form)
 
     else:
         flash('You are not the author of this post')
-        posts = Post.query.order_by(Post.date_posted)
+        posts=Post.query.order_by(Post.date_posted)
         return render_template('post.html', posts=posts)
 
 
-@app.route('/post')
+@ app.route('/post')
 def post():
     # Get the posts from the database
-    posts = Post.query.order_by(Post.date_posted)
+    posts=Post.query.order_by(Post.date_posted)
     return render_template('post.html', posts=posts)
 
 
 # pass to navbar
-@app.context_processor
+@ app.context_processor
 def base():
-    form = SearchForm()
+    form=SearchForm()
     return dict(form=form)
 
 
 # create search function
-@app.route('/search', methods=['POST'])
+@ app.route('/search', methods=['POST'])
 def search():
-    form = SearchForm()
-    posts = Post.query
+    form=SearchForm()
+    posts=Post.query
     if form.validate_on_submit():
         # Get data from form
-        post.searched = form.searched.data
+        post.searched=form.searched.data
         # query the database
-        posts = posts.filter(Post.content.like('%' + post.searched + '%'))
-        posts = posts.order_by(Post.title).all()
+        posts=posts.filter(Post.content.like('%' + post.searched + '%'))
+        posts=posts.order_by(Post.title).all()
         return render_template('search.html', form=form, searched=post.searched, posts=posts)
 
 
 # update database
 @ app.route('/update/<int:id>', methods=['GET', 'POST'])
-@login_required
+@ login_required
 def update_user(id):
-    form = UserForm()
-    name_to_update = User.query.get_or_404(id)
+    form=UserForm()
+    name_to_update=User.query.get_or_404(id)
     if request.method == 'POST':
-        name_to_update.name = request.form['name']
-        name_to_update.email = request.form['email']
-        name_to_update.favorite_color = request.form['favorite_color']
-        name_to_update.username = request.form['username']
+        name_to_update.name=request.form['name']
+        name_to_update.email=request.form['email']
+        name_to_update.favorite_color=request.form['favorite_color']
+        name_to_update.username=request.form['username']
         try:
             db.session.commit()
             flash('User Updated Successfully')
@@ -307,27 +331,27 @@ def update_user(id):
 
 @ app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
-    name = None
-    form = UserForm()
+    name=None
+    form=UserForm()
     if form.validate_on_submit():
 
-        user = User.query.filter_by(email=form.email.data).first()
+        user=User.query.filter_by(email=form.email.data).first()
         if user is None:
             # Hash the password
-            hashed_pw = generate_password_hash(
+            hashed_pw=generate_password_hash(
                 form.password_hash.data, "sha256")
-            user = User(username=form.username.data, name=form.name.data, email=form.email.data,
+            user=User(username=form.username.data, name=form.name.data, email=form.email.data,
                         favorite_color=form.favorite_color.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
-        name = form.name.data
-        form.name.data = ''
-        form.username.data = ''
-        form.email.data = ''
-        form.favorite_color.data = ''
-        form.password_hash.data = ''
+        name=form.name.data
+        form.name.data=''
+        form.username.data=''
+        form.email.data=''
+        form.favorite_color.data=''
+        form.password_hash.data=''
         flash('User added successfully!')
-    our_users = User.query.order_by(User.date_added)
+    our_users=User.query.order_by(User.date_added)
     return render_template('add_user.html', form=form, name=name, our_users=our_users)
 
 
@@ -359,12 +383,12 @@ def page_not_found(e):
 # create name page
 @ app.route('/name', methods=['GET', 'POST'])
 def name():
-    name = None
-    form = NameForm()
+    name=None
+    form=NameForm()
     # validate form
     if form.validate_on_submit():
-        name = form.name.data
-        form.name.data = ''
+        name=form.name.data
+        form.name.data=''
         flash('Form Submitted Successfully!')
     return render_template('name.html', form=form, name=name)
 
@@ -373,24 +397,24 @@ def name():
 @ app.route('/test_pw', methods=['GET', 'POST'])
 def test_pw():
 
-    email = None
-    password = None
-    pw_to_check = None
-    passed = None
+    email=None
+    password=None
+    pw_to_check=None
+    passed=None
 
-    form = PasswordForm()
+    form=PasswordForm()
     # validate form
     if form.validate_on_submit():
-        email = form.email.data
-        password = form.password_hash.data
+        email=form.email.data
+        password=form.password_hash.data
         # clear form
-        form.email.data = ''
-        form.password_hash.data = ''
+        form.email.data=''
+        form.password_hash.data=''
         # Look up user by email
-        pw_to_check = User.query.filter_by(email=email).first()
+        pw_to_check=User.query.filter_by(email=email).first()
 
         # check hashed password
-        passed = check_password_hash(pw_to_check.password_hash, password)
+        passed=check_password_hash(pw_to_check.password_hash, password)
 
     return render_template('test_pw.html', form=form, email=email, password=password, pw_to_check=pw_to_check, passed=passed)
 

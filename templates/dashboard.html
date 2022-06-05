@@ -34,6 +34,7 @@
                 <strong>Email:</strong>&nbsp;{{current_user.email}}<br>
                 <strong>Favorite Color:</strong>&nbsp;{{current_user.favorite_color}}<br>
                 <strong>About Author:</strong>&nbsp;{{current_user.about_author}}<br>
+                <strong>Profile Pic:</strong>&nbsp;{{current_user.profile_pic}}<br>
 
                 <strong>Date Joined:</strong>&nbsp;{{current_user.date_added}}<br>
               </p>
@@ -62,7 +63,7 @@
             </div>
           
           <div class="card-body">
-            <form action="/dashboard" method='POST'>
+            <form action="/dashboard" method='POST' enctype="multipart/form-data">
               {{form.hidden_tag()}}
       
               {{form.name.label(class="form-label")}}
@@ -86,6 +87,10 @@
               
 
               <textarea name="about_author" class="form-control" id="about_author" cols="30" rows="10">{{name_to_update.about_author}}</textarea>
+              <br>
+              {{form.profile_pic.label(class="form-label")}}
+      
+              {{form.profile_pic(class="form-control", value=name_to_update.profile_pic)}}
               <br>
               {{form.submit(class="btn btn-primary btn-sm")}}
       
