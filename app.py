@@ -7,6 +7,9 @@ from sqlalchemy import true
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from web_forms import LoginForm, PostForm, NameForm, PasswordForm, UserForm, SearchForm
+from werkzeug.utils import secure_filename
+import uuid as uuid
+import os
 
 
 # create a Flask Instance
@@ -15,8 +18,12 @@ ckeditor = CKEditor(app)
 # set the secret key
 app.config['SECRET_KEY'] = 'mysecretkey'
 
+# Upload folder
+UPLOAD_FOLDER = './static/images/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 # Add Database
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 
 # New MySQL database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
@@ -31,7 +38,6 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
     content = db.Column(db.Text)
-    # author = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
     slug = db.Column(db.String(255))
     post_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -51,6 +57,7 @@ class User(db.Model, UserMixin):
     date_added = db.Column(db.DateTime, nullable=False,
                            default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
+    profile_pic = db.Column(db.String(200), nullable=True)
     posts = db.relationship('Post', backref='poster', lazy=True)
 
     @ property
@@ -104,7 +111,6 @@ def add_post():
         # clear the form
         form.title.data = ''
         form.content.data = ''
-        #form.author.data = ''
         form.slug.data = ''
         # add the post to the database
         db.session.add(post)
@@ -128,8 +134,23 @@ def dashboard():
         name_to_update.favorite_color = request.form['favorite_color']
         name_to_update.username = request.form['username']
         name_to_update.about_author = request.form['about_author']
+        name_to_update.profile_pic = request.files['profile_pic']
+
+        # grab image name
+        pic_filename = secure_filename(name_to_update.profile_pic.filename)
+
+        # create a unique name for the image
+        pic_filename = str(uuid.uuid4()) + '_' + pic_filename
+
+        # save the image
+        saver = request.files['profile_pic']
+
+        # save pic_filename to the database
+        name_to_update.profile_pic = pic_filename
         try:
             db.session.commit()
+            saver.name_to_update.profile_pic.save(
+                os.path.join(app.config['UPLOAD_FOLDER']), pic_filename)
             flash('User Updated Successfully')
             return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
         except:
@@ -138,37 +159,40 @@ def dashboard():
     else:
         return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
 
-    return render_template('dashboard.html')
-
 
 # delete records from the database
 @ app.route('/delete/<int:id>')
+@login_required
 def delete(id):
-    user_to_delete = User.query.get_or_404(id)
-    name = None
-    form = UserForm()
-    try:
-        db.session.delete(user_to_delete)
-        db.session.commit()
-        flash('The user was successfully deleted')
+    if id == current_user.id:
+        user_to_delete = User.query.get_or_404(id)
+        name = None
+        form = UserForm()
+        try:
+            db.session.delete(user_to_delete)
+            db.session.commit()
+            flash('The user was successfully deleted')
 
-        our_users = User.query.order_by(User.date_added)
-        return render_template('add_user.html',
-                               form=form,
-                               name=name,
-                               our_users=our_users)
+            our_users = User.query.order_by(User.date_added)
+            return render_template('add_user.html',
+                                   form=form,
+                                   name=name,
+                                   our_users=our_users)
 
-    except:
-        flash("There was a problem deleting the user. Try Again...")
-        return render_template('add_user.html',
-                               form=form,
-                               name=name,
-                               our_users=our_users)
+        except:
+            flash("There was a problem deleting the user. Try Again...")
+            return render_template('add_user.html',
+                                   form=form,
+                                   name=name,
+                                   our_users=our_users)
+    else:
+        flash('You are not authorized to delete this user')
+        return redirect(url_for('dashboard'))
 
 
 # create logout page
-@app.route('/logout', methods=['GET', 'POST'])
-@login_required
+@ app.route('/logout', methods=['GET', 'POST'])
+@ login_required
 def logout():
     logout_user()
     flash('You have been logged out!')
@@ -176,7 +200,7 @@ def logout():
 
 
 # create login page
-@app.route('/login', methods=['GET', 'POST'])
+@ app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -194,8 +218,8 @@ def login():
     return render_template('login.html', form=form)
 
 
-@app.route('/posts/delete/<int:id>')
-@login_required
+@ app.route('/posts/delete/<int:id>')
+@ login_required
 def delete_post(id):
     post_to_delete = Post.query.get_or_404(id)
     id = current_user.id
@@ -220,20 +244,19 @@ def delete_post(id):
         return render_template('post.html', posts=posts)
 
 
-@app.route('/posts/<int:id>')
+@ app.route('/posts/<int:id>')
 def posts(id):
     post = Post.query.get_or_404(id)
     return render_template('posts.html', post=post)
 
 
-@app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
+@ app.route('/posts/edit/<int:id>', methods=['GET', 'POST'])
+@ login_required
 def edit_post(id):
     post = Post.query.get_or_404(id)
     form = PostForm()
     if form.validate_on_submit():
         post.title = form.title.data
-        #post.author = form.author.data
         post.slug = form.slug.data
         post.content = form.content.data
         # update the database
@@ -244,7 +267,6 @@ def edit_post(id):
 
     if current_user.id == post.poster.id:
         form.title.data = post.title
-        #form.author.data = post.author
         form.slug.data = post.slug
         form.content.data = post.content
         return render_template('edit_post.html', form=form)
@@ -255,7 +277,7 @@ def edit_post(id):
         return render_template('post.html', posts=posts)
 
 
-@app.route('/post')
+@ app.route('/post')
 def post():
     # Get the posts from the database
     posts = Post.query.order_by(Post.date_posted)
@@ -263,14 +285,14 @@ def post():
 
 
 # pass to navbar
-@app.context_processor
+@ app.context_processor
 def base():
     form = SearchForm()
     return dict(form=form)
 
 
 # create search function
-@app.route('/search', methods=['POST'])
+@ app.route('/search', methods=['POST'])
 def search():
     form = SearchForm()
     posts = Post.query
@@ -285,7 +307,7 @@ def search():
 
 # update database
 @ app.route('/update/<int:id>', methods=['GET', 'POST'])
-@login_required
+@ login_required
 def update_user(id):
     form = UserForm()
     name_to_update = User.query.get_or_404(id)
@@ -344,6 +366,7 @@ def user(name):
 
 
 # create custom error pages
+
 # Invalid URL
 @ app.errorhandler(404)
 def page_not_found(e):

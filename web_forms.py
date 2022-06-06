@@ -3,6 +3,7 @@ from wtforms import StringField, SubmitField, PasswordField, BooleanField,Valida
 from wtforms.validators import DataRequired, Length, EqualTo
 from wtforms.widgets import TextArea
 from flask_ckeditor import CKEditorField
+from flask_wtf.file import FileField
 
 
 # create search form
@@ -21,9 +22,7 @@ class LoginForm(FlaskForm):
 # create Post form
 class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
-    #content = StringField('Content', validators=[DataRequired()], widget=TextArea())
     content = CKEditorField('Content', validators=[DataRequired()])
-    #author = StringField('Author')
     slug = StringField('Slug', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
@@ -47,6 +46,7 @@ class UserForm(FlaskForm):
         'password_hash2', message='Passwords must match')])
     password_hash2 = PasswordField(
         'Confirm Password', validators=[DataRequired()])
+    profile_pic = FileField('Profile Picture')
 
     submit = SubmitField('Submit')
 
