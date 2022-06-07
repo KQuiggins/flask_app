@@ -26,7 +26,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 
 # New MySQL database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://kgrxmbsreatsql:de3bdc0a530738777728d616ff7913dff3279d73ec4244fc7a775f98e1a2c287@ec2-34-198-186-145.compute-1.amazonaws.com:5432/dr2mm085eiskb'
 
 # Initialize the database
 db = SQLAlchemy(app)
@@ -53,7 +55,7 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(200), nullable=False, unique=True)
     favorite_color = db.Column(db.String(50))
-    about_author = db.Column(db.Text(500), nullable=True)
+    about_author = db.Column(db.Text(), nullable=True)
     date_added = db.Column(db.DateTime, nullable=False,
                            default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
