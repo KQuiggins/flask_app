@@ -28,7 +28,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # New MySQL database
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://kgrxmbsreatsql:de3bdc0a530738777728d616ff7913dff3279d73ec4244fc7a775f98e1a2c287@ec2-34-198-186-145.compute-1.amazonaws.com:5432/dr2mm085eiskb'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kgrxmbsreatsql:de3bdc0a530738777728d616ff7913dff3279d73ec4244fc7a775f98e1a2c287@ec2-34-198-186-145.compute-1.amazonaws.com:5432/dr2mm085eiskb'
 
 # Initialize the database
 db = SQLAlchemy(app)
