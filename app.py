@@ -19,7 +19,7 @@ ckeditor = CKEditor(app)
 app.config['SECRET_KEY'] = 'mysecretkey'
 
 # Upload folder
-UPLOAD_FOLDER = './static/images/'
+UPLOAD_FOLDER = 'static/images/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Add Database
@@ -142,16 +142,16 @@ def dashboard():
         pic_filename = secure_filename(name_to_update.profile_pic.filename)
 
         # create a unique name for the image
-        pic_filename = str(uuid.uuid4()) + '_' + pic_filename
+        pic_name = str(uuid.uuid1()) + '_' + pic_filename
 
         # save the image
         saver = request.files['profile_pic']
 
         # save pic_filename to the database
-        name_to_update.profile_pic = pic_filename
+        name_to_update.profile_pic = pic_name
         try:
             db.session.commit()
-            saver.name_to_update.profile_pic.save(
+            saver.save(
                 os.path.join(app.config['UPLOAD_FOLDER'], pic_filename))
             flash('User Updated Successfully')
             return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
