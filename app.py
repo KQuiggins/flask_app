@@ -152,7 +152,7 @@ def dashboard():
         try:
             db.session.commit()
             saver.name_to_update.profile_pic.save(
-                os.path.join(app.config['UPLOAD_FOLDER']), pic_filename)
+                os.path.join(app.config['UPLOAD_FOLDER'], pic_filename))
             flash('User Updated Successfully')
             return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
         except:
