@@ -26,9 +26,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 
 # New MySQL database
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://feoptvpmodxjze:3e542b105d161c13135e80efb84d3a923b90e2fbeb7ad7663a0b8599bf494327@ec2-3-226-163-72.compute-1.amazonaws.com:5432/d3g5rukiub3gtl'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://feoptvpmodxjze:3e542b105d161c13135e80efb84d3a923b90e2fbeb7ad7663a0b8599bf494327@ec2-3-226-163-72.compute-1.amazonaws.com:5432/d3g5rukiub3gtl'
 
 # Initialize the database
 db = SQLAlchemy(app)
@@ -362,9 +362,10 @@ def index():
     return render_template('index.html')
 
 
-@ app.route('/user/<name>')
-def user(name):
-    return render_template('user.html', user_name=name)
+@ app.route('/user/')
+def user():
+    
+    return render_template('user.html')
 
 
 # create custom error pages
