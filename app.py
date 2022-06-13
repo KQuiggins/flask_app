@@ -136,28 +136,39 @@ def dashboard():
         name_to_update.favorite_color = request.form['favorite_color']
         name_to_update.username = request.form['username']
         name_to_update.about_author = request.form['about_author']
-        name_to_update.profile_pic = request.files['profile_pic']
+        
+        # check for profile picture
+        if request.files['profile_pic']:
+            name_to_update.profile_pic = request.files['profile_pic']
 
-        # grab image name
-        pic_filename = secure_filename(name_to_update.profile_pic.filename)
 
-        # create a unique name for the image
-        pic_name = str(uuid.uuid1()) + '_' + pic_filename
 
-        # save the image
-        saver = request.files['profile_pic']
+            # grab image name
+            pic_filename = secure_filename(name_to_update.profile_pic.filename)
 
-        # save pic_filename to the database
-        name_to_update.profile_pic = pic_name
-        try:
+            # create a unique name for the image
+            pic_name = str(uuid.uuid1()) + '_' + pic_filename
+
+            # save the image
+            saver = request.files['profile_pic']
+
+            # save pic_filename to the database
+            name_to_update.profile_pic = pic_name
+            try:
+                db.session.commit()
+                saver.save(
+                    os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+                flash('User Updated Successfully')
+                return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+            except:
+                flash('There was an issue updating the user')
+                return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+
+        else:
             db.session.commit()
-            saver.save(
-                os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
             flash('User Updated Successfully')
             return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
-        except:
-            flash('There was an issue updating the user')
-            return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
+    
     else:
         return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
 
