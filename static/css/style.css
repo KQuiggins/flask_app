@@ -22,3 +22,8 @@ a{
     
     text-decoration: none;
 }
+
+#post-btn{
+    position: absolute;
+    left: 320px;
+}

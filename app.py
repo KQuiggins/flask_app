@@ -26,9 +26,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 
 # New MySQL database
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123@localhost/users'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://feoptvpmodxjze:3e542b105d161c13135e80efb84d3a923b90e2fbeb7ad7663a0b8599bf494327@ec2-3-226-163-72.compute-1.amazonaws.com:5432/d3g5rukiub3gtl'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://feoptvpmodxjze:3e542b105d161c13135e80efb84d3a923b90e2fbeb7ad7663a0b8599bf494327@ec2-3-226-163-72.compute-1.amazonaws.com:5432/d3g5rukiub3gtl'
 
 # Initialize the database
 db = SQLAlchemy(app)
@@ -136,12 +136,10 @@ def dashboard():
         name_to_update.favorite_color = request.form['favorite_color']
         name_to_update.username = request.form['username']
         name_to_update.about_author = request.form['about_author']
-        
+
         # check for profile picture
         if request.files['profile_pic']:
             name_to_update.profile_pic = request.files['profile_pic']
-
-
 
             # grab image name
             pic_filename = secure_filename(name_to_update.profile_pic.filename)
@@ -168,7 +166,7 @@ def dashboard():
             db.session.commit()
             flash('User Updated Successfully')
             return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
-    
+
     else:
         return render_template('dashboard.html', form=form, name_to_update=name_to_update, id=id)
 
@@ -375,7 +373,7 @@ def index():
 
 @ app.route('/user/')
 def user():
-    
+
     return render_template('user.html')
 
 
