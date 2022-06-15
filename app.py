@@ -234,7 +234,7 @@ def login():
 def delete_post(id):
     post_to_delete = Post.query.get_or_404(id)
     id = current_user.id
-    if id == post_to_delete.poster.id:
+    if id == post_to_delete.poster.id or id == 1:
 
         try:
             db.session.delete(post_to_delete)
@@ -276,7 +276,7 @@ def edit_post(id):
         flash('Your post has been updated!', 'success')
         return redirect(url_for('posts', id=post.id))
 
-    if current_user.id == post.poster.id:
+    if current_user.id == post.poster.id or current_user.id == 1:
         form.title.data = post.title
         form.slug.data = post.slug
         form.content.data = post.content
