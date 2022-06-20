@@ -1,10 +1,26 @@
 .welcome{
     background-color: rgb(136, 154, 243);
+    
+}
+
+#tech{
+    margin-bottom: 20px;
 }
 
 #home{
     background-color: rgb(233, 235, 246);
     
+}
+
+#live{
+    margin-top: 10px;
+    text-align: center;
+}
+
+span{
+    
+    font-weight: bold;
+    color:rgb(136, 154, 243);
 }
 
 h1{
