@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% for message in get_flashed_messages() %}
+<body class="welcome">
     
-    <div class="alert alert-primary alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="container shadow p-3 mb-5" id="home">
+        <h1 class="text-center">Welcome to Ken's Tech Blog</h1>
+        <img src="/static/images/chalkboard.jpg" alt="" class="rounded mx-auto d-block text-center">
     </div>
-    
+</body>
    
 
-{% endfor %}
+
 
     
     
