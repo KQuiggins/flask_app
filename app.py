@@ -34,7 +34,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://feoptvpmodxjze:3e542b105d1
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-
 # create a blog post model
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -76,6 +75,7 @@ class User(db.Model, UserMixin):
     # Create a String
     def __repr__(self):
         return '<Name: {}>'.format(self.name)
+
 
 
 # Flask Login
